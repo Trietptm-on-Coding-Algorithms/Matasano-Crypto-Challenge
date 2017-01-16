@@ -66,6 +66,7 @@ from base64 import b64decode
 from numpy import mean
 from byteXOR import crack_byteXOR
 from repeating_key_xor import rep_xor
+from itertools import izip_longest
 
 
 def bin_hamm_dist(a, b):
@@ -88,16 +89,16 @@ def crack_xor(data):
     key_len = get_key_lengths(data)[0]
     grid = transpose(chunker(data, key_len))
     key = ''.join([chr(crack_byteXOR(''.join(row))[2]) for row in grid])
-    return key, rep_xor(data, key)
+    return key_len, key, rep_xor(data, key)
 
 
 def transpose(table):
-    return zip(*table)
+    return tuple(izip_longest(*table, fillvalue=''))
 
 
 def chunker(seq, size):
     'breaks a sequence into chunks of length "size"'
-    return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
+    return tuple(seq[pos:pos + size] for pos in xrange(0, len(seq), size))
 
 
 def get_key_lengths(data, max_key_len=40):
@@ -109,12 +110,17 @@ def get_key_lengths(data, max_key_len=40):
         return mean([bin_hamm_dist(part[:n], part[n:]) / float(n * 8)
                     for part in chunker(data, n * 2)
                     if len(part) == n * 2])
-    return sorted((n for n in xrange(2, max_n + 1)), key=calc_key_hamm)
+    return sorted((n for n in xrange(1, max_n + 1)), key=calc_key_hamm)
 
 if __name__ == "__main__":
-    a = "this is a test"
-    b = "wokka wokka!!!"
-    print "Binary Hamming Distance: %d" % bin_hamm_dist(a, b)
+    # a = "this is a test"
+    # b = "wokka wokka!!!"
+    # print "Binary Hamming Distance: %d" % bin_hamm_dist(a, b)
+
+    # with open('XORAlice.txt', 'r') as f:
+    #     alice = f.read()[:5000] # Alice in Wonderland XORed with "WONDERLAND"
+    # print crack_xor(alice)
+
     with open('6.txt', 'r') as f:
         enc = b64decode(f.read())
     print crack_xor(enc)
